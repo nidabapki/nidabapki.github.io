@@ -13,6 +13,6 @@ Nidaba has distinguished properties. Among them are resistance to the cyber squa
 
 The details you can find in [the whitepaper]({{ site.url }}/files/nidaba.pdf).
 
-**Donation address** -- 1M1MVugdD4UrCenTpS9tj4fYDkMzvUf54d
+**Thank you for your donations** -- [1M1MVugdD4UrCenTpS9tj4fYDkMzvUf54d](bitcoin:1M1MVugdD4UrCenTpS9tj4fYDkMzvUf54d)
 
 [Why I chose Nidaba to be the name](http://rystsov.info/2014/04/24/nidaba.html)
