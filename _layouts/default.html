@@ -1,6 +1,8 @@
 <html>
 <head>
-    <title>Nidaba</title>
+    <title>{{ page.title }}</title>
+
+    <link href="{{ site.url }}/css/common.css" rel="stylesheet">
     <script>
         (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
         (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -12,7 +14,13 @@
     </script>
 </head>
 <body>
-    <h1>Nidaba</h1>
-    <p>Nidaba is a distributed scalable PKI with a stable price for certificate operations</p>
+<div id="column">
+    <div>{{ content }}</div>
+    <div id="footer">
+        <div id="contacts">
+            Denis Rystsov (<a href="http://rystsov.info">web site</a>)
+        </div>
+    </div>
+</div>
 </body>
 </html>
