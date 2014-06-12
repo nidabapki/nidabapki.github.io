@@ -1,0 +1,84 @@
+digraph G {
+	//concentrate=true;
+
+	{
+		"-946" -> "1" -> "30" -> "62" -> "67" -> 
+		"353" -> "398" -> "404" -> 
+		"531" -> "6049" -> "6050" -> "12098" [dir=back];
+	}
+
+	{
+		"X: PayEvent<NewCert>(72)" -> "X: PayEvent<Fee>(1000)"  [dir=back];
+		"X: PayEvent<NewCert>(72)" -> "Y: PayEvent<NewAcc>(2200)" [dir=back];
+		"Y: PayEvent<NewAcc>(2200)" -> "Y: Bid(3)" [dir=back];
+		"X: PayEvent<NewCert>(72)" -> "Y: Bid(3)" [dir=back];
+		"Y: PayEvent<NewAcc>(2200)" -> "AccCloseEvent(Y)" [dir=back];
+		"X: PayEvent<NewCert>(72)" -> "Z: PayEvent<NewAcc>(1000)" [dir=back];
+		"Z: PayEvent<NewAcc>(1000)" -> "Z: Bid(1)" [dir=back];
+		"Y: Bid(3)" -> "Z: Bid(1)" [dir=back];
+		"Z: PayEvent<NewAcc>(1000)" -> "AccCloseEvent(Z)" [dir=back];
+		"X: PayEvent<NewCert>(72)" -> "AuctionCancelEvent" [dir=back];
+		"AuctionCancelEvent" -> "X: PayEvent<NewAcc>(14000)" [dir=back];
+		"X: PayEvent<NewAcc>(14000)" -> "AuctionEndEvent(X)" [dir=back];
+	}
+
+	{
+		rank=same;
+		"-946"; "PriceAnnouncementEvent(3, 1008)";
+	}
+
+	{
+		rank=same;
+		"1"; "X: PayEvent<NewCert>(72)";
+	}
+
+	{
+		rank=same;
+		"30"; "PriceAnnouncementEvent(2, 32)";
+	}
+
+	{
+		rank=same;
+		"62"; "PriceAnnouncementEvent(2, 0)";
+	}
+
+	{
+		rank=same;
+		"67"; "X: PayEvent<Fee>(1000)";
+	}
+
+	{
+		rank=same;
+		"353"; "Y: PayEvent<NewAcc>(2200)"; "Y: Bid(3)";
+	}
+
+	{
+		rank=same;
+		"398"; "AccCloseEvent(Y)";
+	}
+
+	{
+		rank=same;
+		"404"; "Z: PayEvent<NewAcc>(1000)"; "Z: Bid(1)";
+	}
+
+	{
+		rank=same;
+		"531"; "AccCloseEvent(Z)";
+	}
+
+	{
+		rank=same;
+		"6049"; "AuctionCancelEvent";
+	}
+
+	{
+		rank=same;
+		"6050"; "X: PayEvent<NewAcc>(14000)";
+	}
+
+	{
+		rank=same;
+		"12098"; "AuctionEndEvent(X)";
+	}
+}

@@ -1,0 +1,58 @@
+#auctionPage .action {
+    width: 15em;
+    font-weight: bold;
+}
+
+#auctionPage .comment {
+    width: 20em;
+    color: blue;
+}
+
+#auctionPage td {
+    vertical-align: top;
+}
+
+#auctionPage .blockNumber {
+    width: 4em;
+    text-align: right;
+    padding-right: 0.5em;
+}
+
+#auctionPage .blockNumber div {
+    font-size: 30px;
+}
+
+#auctionPage .splitter-on {
+    border-bottom-color: rgb(160, 50, 50);
+    border-bottom-width: 1;
+    border-bottom-style: solid;
+}
+
+#auctionPage #event {
+    font-weight: bold;
+}
+
+#auctionPage #comment {
+    color: blue;
+}
+
+#auctionPage #state {
+    color: rgb(160, 50, 50);
+}
+
+#auctionPage .block pre {
+    color: rgb(160, 50, 50);
+}
+
+#auctionPage .block {
+    margin-top: 1em;
+    margin-bottom: 1em;
+
+    border-right-color: black;
+    border-right-width: 4;
+    border-right-style: dotted;
+
+    border-left-color: black;
+    border-left-width: 4;
+    border-left-style: dotted;
+}

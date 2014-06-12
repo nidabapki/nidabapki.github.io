@@ -1,0 +1,169 @@
+---
+layout: protocol
+title: Ownership language
+name: ownlang
+---
+
+<div id="ownLang">
+
+<div class="pageTitle">Язык описания прав доступа</div>
+
+<p>Язык для описания прав доступа называется ownlang, он позволяет описывать права доступа к следующим операциям связанными со счетом: Bid, PubKeyChange, DisavowKey, DisavowCert и OwnershipChange.</p>
+
+<pre>
+ownership = {
+    codeLen(m),
+    code : bytecode{m}
+}
+</pre>
+
+<p>Если пользователь не описал права доступа, то используются схема по-умолчанию, которая требует подписывать операции ключом сертификата. Пользователь может прописать эту схему явно.</p>
+
+<div class="example">
+<pre>setOwnership({
+    "*": (context) => {
+        assert context.Event.signatures.contains(context.cert.pubKey)
+    }
+}, [Bid, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange]);
+delay(144, [OwnershipChange]);</pre>
+</div>
+
+<p>Операция <span class="fun">setOwnership</span> устанавливает права доступа для объектов переданных во втором аргументе. В качестве объектов могут выступать типы описывающие события или внутренние объекты языка, такие как переменые или функции. С каждым объектом может быть несколько операций, например, для событий &mdash; apply (включение события в блок), для переменных &mdash; get и set (изменение значения); как минимум для каждого объекта определена операция <span class="fun">setOwnership</span>, которая может переопределять доступ к этому объекту. Астериск используется для указания всех операций для объекта.</p>
+
+<p><span class="fun">delay</span> добавляет задержку от включения блока до применения. В данном случае добавляется задержка в 2 вн. дня. Если злоумышленник украдет приватный ключ и попытается совершить изменение прав доступа, то у пользователя будет два дня на то, чтобы отозвать сертификат.</p>
+
+<p>Формально, по-умолчанию, доступ к функциям стандартной библиотеки (таких как <span class="fun">delay</span>) не защищается, но фактически выполняться они могут только внутри события OwnershipChange, поэтому для них защита фактически такая же, как и для включения события OwnershipChange.</p>
+
+<p>Настройки доступа по-умолчанию является небезопастными, так как в случае кражи приватного ключа сертификата, пользователю остается только отказаться от сертификата. Для того, чтобы это избежать пользователь может использовать другой публичный ключ для контроля операций.</p>
+
+<div class="example">
+<pre>setOwnership({
+    "*": (context) => {
+        assert context.Event.signatures.contains(PK("x42.."))
+    }
+}, [Bid, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange]);
+delay(144, [OwnershipChange]);</pre>
+</div>
+
+<p>PK("x42..") &mdash; публичный часть управляющего ключа для доступа к счету. В случае, если злоумышленний получит приватный ключ сертификата, пользователь сможет его сменить. Если злоумышленний получит управляющий приватный ключ &mdash; пользователь отзовет сертификат, как и в случае по-умолчанию.</p>
+
+<p>Вспомним схему A из whitepaper.</p> 
+
+<blockquote>
+    An owner of a certificate's account can allow anyone to bid for their sake in a auction. The owner may limit a bid to be no more than 20% above the last bid to prevent a malefactor to make an astronomical bid to sabotage the auction. In addition the owner may deny to make a bid for their sake if they is already the owner of the certificate to avoid the malefactor doing several sequential bids to push the price of ownership higher. Also the owner may limit the bid for their sake to be no more that 5x of base price.
+</blockquote>
+
+<p>И опишем её формально с помощью ownlang.</p>
+
+<div class="example">
+<pre>owner = PK("x42..")
+
+setOwnership({
+    "*": (context) => {
+        assert context.Event.signatures.contains(owner);
+    }
+}, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange);
+
+setOwnership({
+    "apply": (context) => {
+        bid = (Bid)context.Event;
+        assert bid.auction.winner.bid * 1.20 >= bid.bid
+        assert bid.auction.winner != bid.account
+        assert bid.bid &le; 5
+    }
+    "setOwnership": (context) => {
+        assert context.Event.signatures.contains(owner);
+    }
+}, Bid);
+
+delay(144, [OwnershipChange]);</pre>
+</div>
+
+<p>Во всех примерах выше владелец управляющего ключа обладает полными правами на управление счетом. Давайте ограничем возможность измененять права доступа.</p>
+
+<div class="example">
+<pre>setOwnership({
+    "*": (context) => {
+        assert context.Event.signatures.contains(PK("x42.."));
+    }
+}, Bid, PubKeyChange, DisavowKey, DisavowCert);
+
+setOwnership({
+    "*": (context) => { assert false; }
+}, OwnershipChange);</pre>
+</div>
+
+<p>После этих изменений никто не сможет включить событие OwnershipChange в блок. В примере опущена задержка <span class="fun">delay</span>, так как ни злоумышленник, ни сам владелец счета не сможет сменить права.</p>
+
+<p>С практической точки зрения этот пример ограниченный, так как исключает возможность продать сертификат другому пользователю. Давайте добавим возможность менять управляющий ключ, но не тип TODO:аутентификации/авторизации.</p>
+
+<div class="example">
+<pre>function changePK(pk) {
+    setOwnership({
+        "*": (context) => {
+            assert context.Event.signatures.contains(pk);
+        },
+        "setOwnership": (context) => {
+            assert context.stackTrace[-1].fun==changePK
+        }
+    }, Bid, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange);
+}
+changePK(PK("x42.."));</pre>
+</div>
+
+<p>Теперь смена прав доступа ограничена функцией <span class="fun">changePK</span>. Этот пример можно переделать для поддержки схемы&nbsp;B, вспомним её:</p>
+
+<blockquote>An owner of a certificate can introduce a list of public keys and
+provide access to certificate management operations only if there is a quorum of
+keys. Also the list itself may be altered if the quorum is reached. Beside this, a
+disavowal of the certificate ownership can be set up to be valid if it is signed by
+the quorum of current list or by the quorum of the list which was actual no more
+than N blocks ago.</blockquote>
+
+<p>Дополнительно, запретим менять список публичных ключей более, чем на один ключ, а так же проводить изменения чаще, чем раз в день.</p>
+
+<div class="example">
+<pre>owners = set([PK("x42.."),PK("y13.."),PK("59k..")])
+function changeOwners(pretendents) {
+    assert |owners/pretendents| &lt;=1
+    assert |pretendents/owners| &lt;=1
+    context = getContext()
+    if (context.stackTrace[-1].fun.calls.size()>0) {
+        assert (
+          context.currentBlockNum - 
+          context.stackTrace[-1].fun.calls[-1].blockNum
+        ) &gt; 72
+    }
+    owners=pretendents
+    setOwnership({
+        "*": (context) => {
+            assert owners.contains(context.Event.signatures) 
+            assert |context.Event.signatures|/|owners|&gt;0.5
+        },
+        "setOwnership": (context) => {
+            assert context.stackTrace[-1].fun==changeOwners
+        }
+    }, Bid, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange);
+}
+setOwnership({ "set": (context) => {
+    assert context.stackTrace[-1].fun==changeOwners
+}}, owners);
+changeOwners(owners)</pre>
+</div>
+
+<p>Если переменную owners не защитить с помощью setOwnership, то кворум ключей позволил бы включить в блок OwnershipChange, в котором переменная owners могла бы быть изменена в обход условий. Альтернативно мы бы могли использовать IIF для тех же целей (многоточием показан общий код):</p>
+
+
+<div class="example">
+<pre>changeOwners = (function(owners){
+    changeOwners = function (pretendents) {
+        ...
+    }
+    changeOwners(owners)
+    return changeOwners;
+})(set([PK("x42.."),PK("y13.."),PK("59k..")]));</pre>
+</div>
+
+<p>TODO: от размера claim/ownership зависит цена владения домена.</p>
+<p>TODO: reader macros.</p>
+</div>

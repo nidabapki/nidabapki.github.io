@@ -1,0 +1,841 @@
+---
+layout: protocol
+title: Structures
+name: structures
+---
+
+<div id="specPage">
+
+<div class="pageTitle">Описание структуры блоков</div>
+
+<div id="tableOfContents">
+<ul>
+<li><a href="#Block" class="int">Block</a></li>
+<li><a href="#NidabaHeader" class="int">NidabaHeader</a></li>
+<li><a href="#Events" class="int">Events</a>
+    <ul>
+      <li><a href="#ChainEvent" class="int">ChainEvent</a>
+          <ul>
+            <li><a href="#CoinBaseEvent" class="int">CoinBaseEvent</a></li>
+            <li><a href="#DistributeEvent" class="int">DistributeEvent</a></li>
+            <li><a href="#ObservationEvent" class="int">ObservationEvent</a></li>
+          </ul></li>
+      <li><a href="#CertEvent" class="int">CertEvent</a>
+          <ul>
+            <li><a href="#NewCert" class="int">PayEvent&lt;NewCert&gt;</a></li>
+            <li><a href="#NewAcc" class="int">PayEvent&lt;NewAcc&gt;</a></li>
+            <li><a href="#Fee" class="int">PayEvent&lt;Fee&gt;</a></li>
+            <li><a href="#Bid" class="int">Bid</a></li>
+            <li><a href="#PubKeyChange" class="int">PayEvent&lt;PubKeyChange&gt;</a></li>
+            <li><a href="#DisavowKey" class="int">DisavowKey</a></li>
+            <li><a href="#DisavowCert" class="int">DisavowCert</a></li>
+            <li><a href="#OwnershipChange" class="int">PayEvent&lt;OwnershipChange&gt;</a></li>
+          </ul></li>
+      <li><a href="#VirtualEvent" class="int">VirtualEvent</a>
+          <ul>
+            <li><a href="#AuctionEndEvent" class="int">AuctionEndEvent</a></li>
+            <li><a href="#AuctionCancelEvent" class="int">AuctionCancelEvent</a></li>
+            <li><a href="#AccCloseEvent" class="int">AccCloseEvent</a></li>
+            <li><a href="#DeductionEvent" class="int">DeductionEvent</a></li>
+            <li><a href="#PriceAnnouncementEvent" class="int">PriceAnnouncementEvent</a></li>
+            <li><a href="#TimeFixEvent" class="int">TimeFixEvent</a></li>
+          </ul></li>
+    </ul></li>
+</ul>
+</div>
+
+<p>Рассмотрим структуру блоков Nidaba.</p>
+
+<p><a href="{% post_url 2014-06-02-validation %}#NidabaHeader">Валидация Block/NidabaHeader</a></p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="block"><a name="Block" class="anchor"><b>Block</b></a> = {
+  <span class="field">magicN</span>,
+  blockSize,
+  <a href="#NidabaHeader" class="int">NidabaHeader</a>,
+  bitcoinHeaderCounter
+  <span class="field">BitcoinHeader</span>*,
+  eventCounter,
+  <span class="field">Event</span>*
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="block_magicN" class="description">
+        magicN - неведомая фигня, которую я скопировал с bitcoin.
+      </div>
+      <div id="block_BitcoinHeader" class="description">
+        Заголовки Bitcoin используются для вычисления времени добычи блока. Майнер добавляет заголовки Bitcoin таким образом:
+        <ul>
+          <li>совокупность всех добавленных заголовков Bitcoin до любого Nidaba блока образововала связное дерево</li>
+          <li>ветка дерева, в которую добавляются новые заголовки, после добавления была самой сложной</li>
+        </ul>
+      </div>
+      <div id="block_Event" class="description">
+        <p>Единственные события, которые происходят внутри Bitcoin цепи — финансовые транзакции; разнообразие событий внутри Nidaba цепи шире, поэтому коллекция транзакций заменена на коллекцию событий разного типа. <a href="#events" class="int">Подробнее</a>.</p>
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="nidabaHeader"><a name="NidabaHeader" class="anchor"><b>NidabaHeader</b></a> = {
+  version,
+  <span class="field">type</span>,
+  hashPrevBlock,
+  hashMerkleRoot,
+  <span class="field">hashPubKeys</span>,
+  <span class="field">defMofN</span> : {
+    n,
+    hash(pubKey){n},
+    m
+  },
+  bits,
+  Nonce
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="nidabaHeader_hashPubKeys" class="description">
+        Поле hashPubKeys вычисляется как хеш от актуальных (продленных) сертификатов. Это вынуждает майнеров хранить всю цепочку, иначе они могли бы игнорировать публичные ключи сертификатов ради оптимизации занимаемого цепочкой места.
+      </div>
+      <div id="nidabaHeader_defMofN" class="description">
+        <p>defMofN описывает доступ для владельца блока, который может распределить вознаграждение за блок между пользователями. <a name="defMofN" class="anchor">Доступ</a> описывается m-of-n схемой: событие распределения должно быть подписано минимум m ключами из предоставленных n.</p>
+
+        <p>Например, если владелец блока - оператор mining pool'a, то пользователи — майнеры, а вознаграждение распределяется в соотрветствии с вкладом каждого майнера. Вознаграждение за конкретный блок может быть распределно только раз.</p>
+      </div>
+      <div id="nidabaHeader_type" class="description">
+        Заголовки в Nidaba могут быть двух типов, для их различия используется поле type. Один тип - обычный, второй тип используется для того, чтобы показать, что текущая цепочка переполнена и созданы две новых. Их id формируется как id родительской цепочки, хэш Nidaba блока зафиксирующий переполнение, 0 или 1.
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h1><a name="events" class="anchor">Events</a></h1>
+
+<p>События в Nidaba делятся на относящиеся к цепочке, к сертификатам и виртуальные.</p>
+
+<p><pre>
+<b>Event</b> = <a href="#ChainEvent" class="int">ChainEvent</a> | <a href="#CertEvent" class="int">CertEvent</a> | <a href="#ChainEvent" class="int">VirtualEvent</a>
+</pre></p>
+
+<p>Все события содержт общее поле type. Для удобства оно выделено в событие отдельного типа, от которого все остальные события наследуются.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre>AE = AbstractEvent = {
+  type
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="abstractEvent_type" class="description">
+        Type &mdash; тип события.
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h2><a name="ChainEvent" class="anchor">События относящиеся к цепочке</a></h2>
+
+<p>К ним относятся распределение вознаграждения за блок, фиксация времени создания блока и создание новой цепочки.</p>
+
+<p><pre>
+<b>ChainEvent</b> = CoinBaseEvent | 
+             DistributeEvent | 
+             ObservationEvent
+</pre></p>
+
+<h3><a name="CoinBaseEvent" class="anchor">CoinBaseEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#CoinBaseEvent">Валидация CoinBaseEvent</a></p>
+
+<p>С помощью события CoinBaseEvent распределяется вознаграждение за блок. Вознаграждение за конкретный блок распределяется только один раз, но само расределение может быть выполнено в любом блоке. Expiration начинает отсчет от времени добычи блока.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="coinBaseEvent"><b>CoinBaseEvent</b> = AE {
+  <span class="field">hashNidabaBlock</span>,
+  outputCount,
+  outputs : {
+    <span class="field">value</span>,
+    <span class="field">defMofN</span>
+  }*,
+  <span class="field">useMofN</span> : {
+    m,
+    sig({
+      hash(this / useMofN),
+      k,
+      hash(pubKey){k}
+    }, pubKey){m}
+  }
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="coinBaseEvent_hashNidabaBlock" class="description">
+        hashNidabaBlock &mdash; ссылка на блок, вознаграждение за который распределяется
+      </div>
+      <div id="coinBaseEvent_value" class="description">
+        value &mdash; размер вознаграждения перечисляемого реципиенту
+      </div>
+      <div id="coinBaseEvent_defMofN" class="description">
+        defMofN описывает доступ к средствам для реципиента используя m-of-n схему, аналогичную <a href="#defMofN" class="int">NidabaHeader.defMofN</a>
+      </div>
+      <div id="coinBaseEvent_useMofN" class="description">
+        <a name="useMofN" class="anchor">useMofN</a> &mdash; предъявление прав на владение блоком, состоит из m сообщений, каждое сообщение должно быть подписано одним из ключей, перечисленных в NidabaHeader.defMofN. Каждое сообщение состоит из хеша текущего CoinBaseEvent события (за исключением поля useMofN) и набора публичных ключей. При добавлении события в цепь будет проверено, что для любого ключа из любого сообщения найдется сообщение им подписанное. Такая схема используется, чтобы пользователь подписывающий событие мог знать, что другие пользователи тоже его подпишут.
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="DistributeEvent" class="anchor">DistributeEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#DistributeEvent">Валидация DistributeEvent</a></p>
+
+<p>После того, как вознаграждение распределено, владелец вознаграждения может разделить его на удобные ему части. Если это не сделать, то при продлении сертификата все вознаграждение будет заблокировано на время транзакции (несколько nidaba-блока). Распределять можно только свои средства, после распределения доступ к ним производится по тому же публичному ключу, как и до.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="distributeEvent"><b>DistributeEvent</b> = AE {
+  <span class="field">hashEvent</span>,
+  <span class="field">num</span>,
+  outputCount,
+  outputs : {
+    <span class="field">value</span>
+  }*,
+  <span class="field">useMofN</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="distributeEvent_hashEvent" class="description">
+        hashEvent &mdash; источник средств - CoinBaseEvent, DistributeEvent, PayEvent&lt;T&gt;, DeductionEvent или TimeFixEvent. В случае TimeFixEvent num должен быть равен нулю.
+      </div>
+      <div id="distributeEvent_num" class="description">
+        num &mdash; номер выхода в источнике, нумерация начинается с единицы.
+      </div>
+      <div id="distributeEvent_value" class="description">
+        value &mdash; размер вознаграждения на новом счету
+      </div>
+      <div id="distributeEvent_useMofN" class="description">
+        useMofN &mdash; используется таже схема, что и с 
+        <a href="#useMofN" class="int">CoinBaseEvent.useMofN</a>.
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="ObservationEvent" class="anchor">ObservationEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#ObservationEvent">Валидация ObservationEvent</a></p>
+
+<p>Время добычи блока определяется с помощью ObservationEvent.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="observationEvent"><a name="ObservationEvent" class="anchor"><b>ObservationEvent</b></a> = AE {
+  <span class="field">hashNidabaBlock</span>,
+  <span class="field">hashBitcoinBlock</span>,
+  <span class="field">merklePathCount</span>,
+  <span class="field">merklePath</span>*,
+  <span class="field">BitcoinTransaction</span>,
+  <span class="field">defMofN</span>,
+  <span class="field">sig</span> : sig({
+    hash(this / sig)
+  }, pubKey)
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="observationEvent_hashNidabaBlock" class="description">
+        hashNidabaBlock &mdash; ссылка на Nidaba–блок, время создания которого фиксируется
+      </div>
+      <div id="observationEvent_hashBitcoinBlock" class="description">
+        hashBitcoinBlock &mdash; ссылка на Bitcoin–блок, содержащий наблюдение
+      </div>
+      <div id="observationEvent_merklePathCount" class="description">
+        merklePathCount &mdash; размер пути до транзакции в merkleTree
+      </div>
+      <div id="observationEvent_merklePath" class="description">
+        merklePath &mdash; компоненты пути до транзакции в merkleTree
+      </div>
+      <div id="observationEvent_BitcoinTransaction" class="description">
+        BitcoinTransaction &mdash; Bitcoin–транзакция, чей output адрес соостветствует использованию hashNidabaBlock в качестве приватного ключа
+      </div>
+      <div id="observationEvent_defMofN" class="description">
+        если это наблюдение зафиксирует время создния блока и за него будет вознаграждение, то доступ к вознграждению будет производиться используя m-of-n схему, аналогичную <a href="#defMofN" class="int">NidabaHeader.defMofN</a>
+      </div>
+      <div id="observationEvent_sig" class="description">
+        подпись этого события (за исключением поля sig) использующая публичный ключ, которым подписан один из входов BitcoinTransaction
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+TODO: Пример с MerklePath
+
+<h2><a name="CertEvent" class="anchor">События относящиеся к сертификатам</a></h2>
+
+<p>К ним относятся регистрация нового сертификата, оплата/редактирование свойств своего сертификата и оплата чужого сертификата (пожертвование).</p>
+
+<p>TODO (SCRIPT): восстановление доступа к аккаунту по кворому доверенных лиц; любой кворум</p>
+
+<p><pre>
+<b>CertEvent</b> = PayEvent&lt;NewCert&gt; | 
+            PayEvent&lt;NewAcc&gt; | 
+            PayEvent&lt;Fee&gt; |
+            Bid |
+            PayEvent&lt;PubKeyChange&gt; |
+            DisavowKey |
+            DisavowCert |
+            PayEvent&lt;OwnershipChange&gt;
+</pre></p>
+
+<p>Каждое из этих событий включает оплату, рассмотрим, как она происходит. Инициатор платежа формирует заявку на регистрацию или оплату сертификата, размещает её на бирже и договаривается о цене операции с владельцем средств, далее одна из сторон формирует событие и распростроняет его по сети. Как только событие было добавлено в цепь или вышел срок годности заявки — транакция между инициатором события и владельцем средств считается закрытой.</p>
+
+<p>Ниже описаны базовый класс для всех заявок и обобщенное событие оплаты.</p>
+
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="request">Req = Request = AE {
+  <span class="field">latestBlock</span>,
+  <span class="field">invoice</span>,
+  <span class="field">due</span>,
+  <span class="field">sig</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="request_latestBlock" class="description">
+        latestBlock &mdash; ссылка на последний Nidaba–блок
+      </div>
+      <div id="request_invoice" class="description">
+        invoice &mdash; кол-во средств перечисляемых на счет сертификата
+      </div>
+      <div id="request_due" class="description">
+        due &mdash; событие содержащие этот request считается валидным (может быть добавленно в цепь) не позже чем через due блоков спустя latestBlock
+      </div>
+      <div id="request_sig" class="description">
+        sig &mdash; подпись инициатора запроса
+      </div>
+    </div>
+    </td>
+</tr>
+</table>
+
+<p><a href="{% post_url 2014-06-02-validation %}#PayEvent">Валидация PayEvent&lt;T&gt;</a></p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="payEvent">PayEvent&lt;T &#x2282; Req&gt; = AE {
+  <span class="field">request</span>: T,
+  <span class="field">inputCount</span>,
+  inputs: {
+    hash(PayEvent.request)
+    <span class="field">hashEvent</span>,
+    <span class="field">num</span>,
+    <span class="field">value</span>,
+    c,
+    <span class="field">hashInput</span>{c},
+    <span class="field">useMofN</span>
+  }+,
+  <span class="field">Nonce</span>?,
+  <span class="field">defMofN</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="payEvent_request" class="description">
+        request &mdash; заявка описывающий платеж
+      </div>
+      <div id="payEvent_inputCount" class="description">
+        inputCount &mdash; кол-во источников средств
+      </div>
+      <div id="payEvent_hashEvent" class="description">
+        hashEvent &mdash; ссылка на источник средств: CoinBaseEvent, DistributeEvent, DeductionEvent, PayEvent&lt;T&gt; (сдача) или TimeFixEvent. В случае TimeFixEvent num должен быть равен нулю.
+      </div>
+      <div id="payEvent_num" class="description">
+        num &mdash; номер output/input в CoinBaseEvent/PayEvent, с которого перечисляются средства, нумерация начинается с единицы.
+      </div>
+      <div id="payEvent_value" class="description">
+        value &mdash; кол-во средств перечисляемых на счет сертификата с этого источника
+      </div>
+      <div id="payEvent_hashInput" class="description">
+        Произвольный набор хешей других input'ов (без учета useMofN). При добавлении события в цепь будет проверено, что input'ы с такими хешами добавлены в событие. Это позволяет владельцу средств (если формированием события занимается инициатор операции) предоставить инициатору операции несколько подписанных входов и быть уверенным, что эти входы будут (или не будут) добавлены в цепь атомарно.
+      </div>
+      <div id="payEvent_useMofN" class="description">
+        useMofN — используется таже схема, что и с 
+        <a href="#useMofN" class="int">CoinBaseEvent.useMofN</a>.
+      </div>
+      <div id="payEvent_Nonce" class="description">
+        Nonce &mdash; произвольное поле, изменяя которое подобрать красивый хеш и произвести дополнительную работу
+      </div>
+      <div id="payEvent_defMofN" class="description">
+        defMofN описывает доступ к средствам в случае возврата используя m-of-n схему, аналогичную <a href="#defMofN" class="int">NidabaHeader.defMofN</a>
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>Поля claim и ownership могут содержать данные произвольного объема. Чтобы предотвратить замусоревание цепи используется следующая стратегия: стоимость операции умножается на округленное вверх до ближайшего целого отношение объема события к константе M.</p>
+
+<h3><a name="NewCert" class="anchor">NewCert</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#NewCert">Валидация NewCert</a></p>
+
+<p>Рассмотрим различные заявки и начнем с регистрации нового сертификата. Для этого используется заявка типа NewCert, она создает счет, открывает аукцион и устанавливает цену владения сертификатом равную базовой стоимости.
+</p>
+
+<p>Событие считается валидным если за это имя еще не проводился аукцион и сумма платежа покрывает стоимость владения сертификата на MN:{{site.data.magic.prepayCert}} вн. день/дня/дней.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="newCert"><b>NewCert</b> = Req {
+  <span class="field">name</span>,
+  <span class="field">pubKey</span>,
+  <span class="field">ownership</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="newCert_name" class="description">
+        name &mdash; уникальное имя сертификата
+      </div>
+      <div id="newCert_pubKey" class="description">
+        pubKey &mdash; публичный ключ сертификата
+      </div>
+      <div id="newCert_ownership" class="description">
+        ownership &mdash; контролирует права доступа к управлению сертификатом
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="NewAcc" class="anchor">NewAcc</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#NewAcc">Валидация NewAcc</a></p>
+
+<p>Для добавления нового участника в аукцион исользуется заявка типа NewAcc. Также, как и при старте аукциона, необходимо совершить платеж, чтобы покрыть стоимость владения сертификата на MN:{{site.data.magic.prepayCert}} вн. день/дня/дней.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="newAcc"><b>NewAcc</b> = Req {
+  <span class="field">hashAuction</span>,
+  <span class="field">pubKey</span>,
+  <span class="field">ownership</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="newAcc_hashAuction" class="description">
+        hashAuction &mdash; ссылка на начало аукциона (PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или AuctionCloseEvent)
+      </div>
+      <div id="newAcc_pubKey" class="description">
+        pubKey &mdash; публичный ключ сертификата
+      </div>
+      <div id="newAcc_ownership" class="description">
+        ownership &mdash; контролирует права доступа к управлению сертификатом
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>Если аукцион за какое-либо имя уже проводился, но в данный момент сертификат не активен, то пользователь может начать новый аукцион. Для этого так же используется событие NewAcc, только поле hashAuction должно ссылаться либо на событие закрывшее предыдущий аукцион AuctionCloseEvent, либо на закрытие счета предыдущего владельца сертификата AccCloseEvent, либо на отзыв сертификата DisavowCert.</p>
+
+<h3><a name="Fee" class="anchor">Fee</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#Fee">Валидация Fee</a></p>
+
+<p>Для пополнения счета сертификта используется заявка типа Fee.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="fee"><b>Fee</b> = Req {
+  <span class="field">hashAccCreation</span>,
+  <span class="field">latestBalance</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="fee_hashAccCreation" class="description">
+        hashAccCreation &mdash; ссылка на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;
+      </div>
+      <div id="fee_latestBalance" class="description">
+        latestBalance &mdash; кол-во средств на счету на момент latestBlock
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>Вычисление текущего баланса не является тривиальной операцией, поэтому для дополнительной проверки при операциях со счетом требуется указывать избыточное поле latestBalance. Такой подход позволит как клиенту, так и серверу быстрее находить ошибки в реализации.</p>
+
+<h3><a name="Bid" class="anchor">Bid</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#Bid">Валидация Bid</a></p>
+
+<p>Повышение ставок в аукционе происходит с помощью события Bid.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="bid"><b>Bid</b> = AE {
+  <span class="field">hashPrevBid</span>,
+  <span class="field">hashAcc</span>,
+  <span class="field">coefficient</span>,
+  <span class="field">claim</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="bid_hashPrevBid" class="description">
+        hashPrevBid &mdash; ссылка на предыдущую ставку - на PayEvent&lt;NewCert&gt; (неявная ставка при запуске аукциона), Bid или PayEvent&lt;NewAcc&gt; (неявная ставка при перезапуске аукциона)
+      </div>
+      <div id="bid_hashAcc" class="description">
+        hashAcc &mdash; ссылка на счет сертификата - на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;
+      </div>
+      <div id="bid_coefficient" class="description">
+        coefficient &mdash; ставка в виде коеффициента от базовой стоимости
+      </div>
+      <div id="bid_claim" class="description">
+        claim &mdash; предъявление прав на операцию Bid
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>TODO (SCRIPT): разрещаю добавить через пожертвования не более X средств каждые N блоков; разрешаю класть на счет только этим лицам; у этого человека есть право вета; нужен кворум доверенных лиц;</p>
+
+<h3><a name="PubKeyChange" class="anchor">PubKeyChange</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#PubKeyChange">Валидация PubKeyChange</a></p>
+
+<p>Для смены публичного ключа сертификата используется событие PayEvent&lt;PubKeyChange&gt;. Цена операции эквивалентна MN:оплате сертификата с базовой ценой вледения на {{site.data.magic.changeFee}} вн месяц/месяца/месяцев.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="pubKeyChange"><b>PubKeyChange</b> = Req {
+  <span class="field">hashLastKeyChange</span>,
+  <span class="field">newPubKey</span>,
+  <span class="field">claim</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="pubKeyChange_hashLastKeyChange" class="description">
+        hashLastKeyChange &mdash; ссылка на последную смену ключа (PayEvent&lt;PubKeyChange&gt;) или на создание счета (PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;)
+      </div>
+      <div id="pubKeyChange_newPubKey" class="description">
+        newPubKey &mdash; новый публичный ключ
+      </div>
+      <div id="pubKeyChange_claim" class="description">
+        claim &mdash; предъявление прав на операцию
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="DisavowKey" class="anchor">DisavowKey</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#DisavowKey">Валидация DisavowKey</a></p>
+
+<p>Отзыв сертификата (DisavowKey) может произвести любой, кто имеет на это право или любой, кому известен приватный ключ.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="disavowKey"><b>DisavowKey</b> = AE {
+  <span class="field">hashLastKeyChange</span>,
+  <span class="field">claim</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="disavowKey_hashLastKeyChange" class="description">
+        hashLastKeyChange &mdash; ссылка на последную смену ключа (PayEvent&lt;PubKeyChange&gt;) или на создание счета (PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;)
+      </div>
+      <div id="disavowKey_claim" class="description">
+        claim &mdash; предъявление прав на операцию
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="DisavowCert" class="anchor">DisavowCert</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#DisavowCert">Валидация DisavowCert</a></p>
+
+<p>Для отзыва сертификата (счета) используется событие DisavowCert.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="disavowCert"><b>DisavowCert</b> = AE {
+  <span class="field">hashAuctionStart</span>,
+  <span class="field">claim</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="disavowCert_hashAuctionStart" class="description">
+        hashAuctionStart &mdash; ссылка на событие открывшее аукцион (PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;)
+      </div>
+      <div id="disavowCert_claim" class="description">
+        claim &mdash; предъявление прав на операцию
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="OwnershipChange" class="anchor">OwnershipChange</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#OwnershipChange">Валидация OwnershipChange</a></p>
+
+<p>Для смены прав доступа к управлению сертификатом используется событие PayEvent&lt;OwnershipChange&gt;. Цена операции эквивалентна MN:оплате сертификата с базовой ценой вледения на {{site.data.magic.changeFee}} вн месяц/месяца/месяцев.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="ownershipChange"><b>OwnershipChange</b> = Req {
+  <span class="field">hashLastOwnershipChange</span>,
+  <span class="field">newOwnership</span>,
+  <span class="field">claim</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="ownershipChange_hashLastOwnershipChange" class="description">
+        hashLastOwnershipChange &mdash; ссылка на последную смену прав доступа (PayEvent&lt;OwnershipChange&gt;) или на создание счета (PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;)
+      </div>
+      <div id="ownershipChange_newOwnership" class="description">
+        newOwnership &mdash; новые права доступа
+      </div>
+      <div id="ownershipChange_claim" class="description">
+        claim &mdash; предъявление прав на операцию
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h2><a name="VirtualEvent" class="anchor">Виртуальные события</a></h2>
+
+Виртуальные события вычисляются на основе произошедших событий и не несут новой информации. Они добавлены, чтобы позволить находить расхождения своей интерпретации событий и общепринятой как можно раньше и таким образом снизить кол-во ошибок связанных с Nidaba.
+
+К виртуальным событиям относятся окончание аукциона, отзыв сертификата из-за задолжности, изменение базовой стоимости и возврат средств за дополнительную работу.
+
+За добавление виртуальных событий отвечает майнер, так как блок без своевременно добавленных виртуальных событий считается невалидным.
+
+<p><pre><b>VirtualEvent</b> = AuctionCancelEvent | 
+               AuctionEndEvent |
+               AccCloseEvent | 
+               DeductionEvent | 
+               PriceChangedEvent |
+               TimeFixEvent</pre></p>
+
+<h3><a name="AuctionEndEvent" class="anchor">AuctionEndEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#AuctionEndEvent">Валидация AuctionEndEvent</a></p>
+
+<p>Начнем с закрытия аукциона. Оно происходит либо в случае победы одного из участников.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="auctionEndEvent"><b>AuctionEndEvent</b> = AE {
+  <span class="field">hashAuctionStart</span>,
+  <span class="field">hashBid</span>,
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="auctionEndEvent_hashAuctionStart" class="description">
+        hashAuctionStart &mdash; ссылка на событие открывшее аукцион (PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;)
+      </div>
+      <div id="auctionEndEvent_hashBid" class="description">
+        hashBid &mdash; ссылка на ставку победителя
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="AuctionCancelEvent" class="anchor">AuctionCancelEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#AuctionCancelEvent">Валидация AuctionCancelEvent</a></p>
+
+<p>Либо когда все участники аукциона отказались от участия (просрочили обязательный платеж или отозвали сертификат DisavowCert).</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="auctionCancelEvent"><b>AuctionCancelEvent</b> = AE {
+  <span class="field">hashAuctionStart</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="auctionCancelEvent_hashAuctionStart" class="description">
+        hashAuctionStart &mdash; ссылка на событие открывшее аукцион
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p><a href="{% post_url 2014-05-31-auction %}">Развернутый пример с аукционом</a></p>
+
+<h3><a name="AccCloseEvent" class="anchor">AccCloseEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#AccCloseEvent">Валидация AccCloseEvent</a></p>
+
+<p>Если баланс владельца сертификата упадет ниже нуля, то сертификат считается свободным</p>
+
+<p>Если такое произошло во время аукциона, то аккаунт владельца снимается с аукциона, а сам аукцион остается без победителя - любой участник предложивший любую ставку становится победителем</p>
+
+<p>Чтобы обозначить подобную ситуацию, используется событие AccCloseEvent.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="accCloseEvent"><b>AccCloseEvent</b> = AE {
+  <span class="field">hashAccStart</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="accCloseEvent_hashAccStart" class="description">
+        hashAccStart &mdash; ссылка на событие создавшее счет
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>TODO: пример</p>
+
+<h3><a name="DeductionEvent" class="anchor">DeductionEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#DeductionEvent">Валидация DeductionEvent</a></p>
+
+<p>Каждую пачку из MN:{{site.data.magic.contestBatch}} платежей выбирается MN:{{site.data.magic.winnerPercent}}% платежей, которые показали больше всего мощности (через дополнительную работу) и им возвращается MN:{{site.data.magic.deductionPercent}}% потраченных средств. Для возврата используется событие типа DeductionEvent.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="deductionEvent"><b>DeductionEvent</b> = AE {
+  <span class="field">topWorkPaymentCount</span>,
+  topWorkPayments : {
+    <span class="field">hashPayEvent</span>,
+    <span class="field">power</span>
+  }*
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="deductionEvent_topWorkPaymentCount" class="description">
+        topWorkPaymentCount &mdash; кол-во возвратов
+      </div>
+      <div id="deductionEvent_hashPayEvent" class="description">
+        hashPayEvent &mdash; ссылка на хеш платежа, по которому осуществляется возврат
+      </div>
+      <div id="deductionEvent_power" class="description">
+        power &mdash; продемонстрируемая мощность
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>{{site.data.magic.winnerPercent}}% платежей выбираются следующем образом:
+<ul>
+<li>рассматриваются только те платежы, которые продемонстрировали дополтительную работу</li>
+<li>высчитывается мощность платежа</li>
+<li>платежи группируются по мощности</li>
+<li>выходной набор состоит как минимум из всех платежей самой мощной группы</li>
+<li>в выходной набор добавляются элементы из следующей по мощности группы, только если после добавления всех платежей из группы, кол-во элементов в выходном наборе не превысет {{site.data.magic.winnerPercent}}% от размера конкурса.</li>
+</ul>
+</p>
+
+<h3><a name="PriceAnnouncementEvent" class="anchor">PriceAnnouncementEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#PriceAnnouncementEvent">Валидация PriceAnnouncementEvent</a></p>
+
+<p>На основе предоставленной мощности вычисляется средняя производительность и происходит корректировка базовой стоимости. После корректировки публикуется виртуальное событие PriceAnnouncementEvent с аннонсом новой базовой стоимости, спустя MN:{{site.data.magic.newPriceDelay}} вн. неделю/недели оно вступает в силу.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="priceAnnouncementEvent"><b>PriceAnnouncementEvent</b> = AE {
+  <span class="field">newBasePrice</span>,
+  <span class="field">delay</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="priceAnnouncementEvent_newBasePrice" class="description">
+        newBasePrice &mdash; новая базовая стоимость
+      </div>
+      <div id="priceAnnouncementEvent_delay" class="description">
+        delay &mdash; задержка перед тем, как новая цена вступит в силу
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<h3><a name="TimeFixEvent" class="anchor">TimeFixEvent</a></h3>
+
+<p><a href="{% post_url 2014-06-02-validation %}#TimeFixEvent">Валидация TimeFixEvent</a></p>
+
+<p>Помимо майнинга и возврата (DeductionEvent) в Nidaba есть еще один способ получить вознаграждение &mdash; за фиксацию времени добычи блока. После MN:{{site.data.magic.agelessDelay}} nidaba блоков самое раннее наблюдение считается временем добычи блока и наблюдателю выплачивается <a href="{% post_url 2014-05-29-glossary %}#observerReward">вознаграждение</a>. Блок который должен содержать фиксацию наблюдения, но не содержит её &mdash; считается некорректным.</p>
+
+<table class="structure-spec">
+<tr>
+  <td>
+    <pre struct="timeFixEvent"><b>TimeFixEvent</b> = AE {
+  <span class="field">hashObservationEvent</span>
+}</pre>
+  </td>
+  <td>
+    <div class="fields-descriptions">
+      <div id="timeFixEvent_hashObservationEvent" class="description">
+        hashObservationEvent &mdash; ссылка на самое раннее наблюдение для фиксируемого блока (текущий-{{site.data.magic.agelessDelay}} блоков). Может быть NULL, если для блока не было наблюдений.
+      </div>
+    </div>
+  </td>
+</tr>
+</table>
+
+<p>Фиксация времени добычи начинается спустя {{site.data.magic.agelessDelay}} блоков начиная с самого первого блока цепи.</p>
+
+</div>

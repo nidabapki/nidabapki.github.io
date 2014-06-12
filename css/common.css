@@ -9,7 +9,18 @@ a {
     text-decoration: none;
 }
 
-h1,h2,h3,p,ul {
+a.anchor {
+    background: none;
+}
+
+a.int {
+    color: blue;
+    background: none;
+    text-decoration: none;
+    border-bottom: 1px dashed;
+}
+
+h1,h2,h3,p,ul,pre {
     margin: 0;
 }
 
@@ -33,7 +44,13 @@ h2 {
 #column {
     margin: 0 auto 0 auto;
     max-width: 50em;
-    font-size: 110%;
+    font-size: 20px;
+}
+
+table {
+    font-size: 20px;
+    border-spacing: 0;
+    border-collapse: collapse;
 }
 
 #footer {

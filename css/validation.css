@@ -1,0 +1,11 @@
+#validationPage #tableOfContents {
+    float: left;
+    list-style-type: none;
+    margin-left: -1em;
+}
+
+#validationPage #tableOfContents ul {
+    list-style-type: none;
+    margin-left: 1em;
+    padding-left: 0;
+}

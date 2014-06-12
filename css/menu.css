@@ -1,0 +1,33 @@
+.menu {
+    margin-bottom: 0.8em;
+}
+
+.menu .home {
+    font-size: 32;
+    font-variant: small-caps;
+}
+
+.menu .home a {
+    background-color: white;
+}
+
+#protocolPage .menu {
+    margin-bottom: 0;
+}
+
+#protocolPage .submenu .subtitle {
+    font-size: 32;
+    font-variant: small-caps;
+}
+
+#protocolPage .submenu .selected {
+    background-color: pink;
+}
+
+#protocolPage .pageTitle {
+    font-size: 30pt;
+    font-weight: 900;
+    font-variant: small-caps;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}

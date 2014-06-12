@@ -1,0 +1,402 @@
+---
+layout: protocol
+title: Validation
+name: validation
+---
+
+<div id="validationPage">
+
+<div class="pageTitle">Правила валидации блоков и событий</div>
+
+<div id="tableOfContents">
+<ul>
+<li><a href="#NidabaHeader" class="int">Block/NidabaHeader</a></li>
+<li>Events
+    <ul>
+      <li>ChainEvent
+          <ul>
+            <li><a href="#CoinBaseEvent" class="int">CoinBaseEvent</a></li>
+            <li>Виртуальные средства</li>
+            <li><a href="#DistributeEvent" class="int">DistributeEvent</a></li>
+            <li><a href="#ObservationEvent" class="int">ObservationEvent</a></li>
+          </ul></li>
+      <li>CertEvent
+          <ul>
+            <li>PayEvent&lt;T&gt;</li>
+            <li><a href="#NewCert" class="int">PayEvent&lt;NewCert&gt;</a></li>
+            <li><a href="#NewAcc" class="int">PayEvent&lt;NewAcc&gt;</a></li>
+            <li><a href="#Fee" class="int">PayEvent&lt;Fee&gt;</a></li>
+            <li><a href="#Bid" class="int">Bid</a></li>
+            <li>операции со счетами</li>
+            <li><a href="#PubKeyChange" class="int">PayEvent&lt;PubKeyChange&gt;</a></li>
+            <li><a href="#DisavowKey" class="int">DisavowKey</a></li>
+            <li><a href="#DisavowCert" class="int">DisavowCert</a></li>
+            <li><a href="#OwnershipChange" class="int">PayEvent&lt;OwnershipChange&gt;</a></li>
+          </ul></li>
+      <li>VirtualEvent
+          <ul>
+            <li><a href="#AuctionEndEvent" class="int">AuctionEndEvent</a></li>
+            <li><a href="#AuctionCancelEvent" class="int">AuctionCancelEvent</a></li>
+            <li><a href="#AccCloseEvent" class="int">AccCloseEvent</a></li>
+            <li><a href="#DeductionEvent" class="int">DeductionEvent</a></li>
+            <li><a href="#PriceChangedEvent" class="int">PriceChangedEvent</a></li>
+            <li><a href="#TimeFixEvent" class="int">TimeFixEvent</a></li>
+          </ul></li>
+    </ul></li>
+</ul>
+</div>
+
+<div>
+<h3><a name="NidabaHeader" class="anchor">Block/NidabaHeader</a></h3>
+<ul>
+    <li>Хеш удоволетворяет текущей сложности</li>
+    <li>После добавления BitcoinHeader, совокупность всех добавленных Bitcoin-заголовков должна образовывать связное дерево</li>
+    <li>BitcoinHeader* могут добавляться только к той ветке, которая после добавления станет самой сложной</li>
+    <li>hashPubKeys совпадает с хешом от публичных ключей владельцев аукционов</li>
+    <li>если это не один из первых {{ site.data.magic.agelessDelay }} дней, то блок обязан содержать одно событие типа TimeFixEvent</li>
+    <li>если прошло {{ site.data.magic.contestBatch }} событий с последнего DeductionEvent, то блок обязан содержать DeductionEvent, блок может содержать несколько DeductionEvent</li>
+    <li>Каждый блок кроме первых {{ site.data.magic.agelessDelay }}+1 обязан содержать TimeFixEvent</li>
+    <li>если средняя производительность изменилась более, чем в {{ site.data.magic.newPriceThresholdX }} раза/раз с последнего изменения базовой цены (по результатам на конец предыдушего блока) и цепь не содержит анонса изменения цены, который еще не вступил в силу, то текущий блок обязан содержать событие PriceChangedEvent</li>
+    <li>для каждого аукциона, чья продолжительность завершилась (по результатам на конец предыдушего блока), текущий блок обязан содержать AuctionEndEvent или AuctionCancelEvent, в зависимости от результатов аукциона</li>
+</ul>
+</div>
+
+<div>
+<h3><a name="CoinBaseEvent" class="anchor">CoinBaseEvent</a></h3>
+<ul>
+    <li>Награждение за блок hashNidabaBlock еще не распределялось.</li>
+    <li>Автор события предоставил права на распределение вознаграждения (useMofN удоволетворяет NidabaHeader.defMofN)</li>
+</ul>
+</div>
+
+<div>
+<h3><a name="VirtualMeans" class="anchor">Виртуальные средства</a></h3>
+    <p>Для удобства описания процесса валидации введено понятие виртуальных средств. Оно имеет следующую структуру.</p>
+
+    <pre>VirtualMean(event, num) = {
+  value,
+  defMofN,
+  originBlock
+}</pre>
+
+    <p>Виртуальные средства опредляются в виде функции от события типа CoinBaseEvent, DistributeEvent, PayEvent&lt;T&gt;, DeductionEvent или TimeFixEvent и числа num. Для определения используется следующая процедура:</p>
+    <ol>
+        <li>если event ссылается на CoinBaseEvent &mdash; виртуальные средства определяются как <pre>{ value: event.outputs[num].value,
+  defMofN: event.outputs[num].defMofN,
+  originBlock: event.hashNidabaBlock }</pre>
+        </li>
+        <li>если event ссылается на DistributeEvent:<ul>
+            <li>проверяем, что num равен нулю</li>
+            <li>event = event.hashEvent, num = event.num</li>
+            <li>возвращаемся к первому шагу</li>
+        </ul></li>
+        <li>если event ссылается на PayEvent&lt;T&gt;:<ul>
+            <li>определяем <code>input = event.inputs[num]</code></li>
+            <li>определяем <code>means = VirtualMean(input.hashEvent, input.num)</code></li>
+            <li>возвращаем:
+                <pre>{ value: means.value - input.value,
+  defMofN: means.defMofN,
+  originBlock: means.originBlock }</pre></li>
+        </ul></li>
+        <li>если event ссылается на DeductionEvent &mdash; возвращается:
+    <pre>{ value: DeductionReward(event.topWorkPayments[num].hashPayEvent),
+  defMofN: event.topWorkPayments[num].hashPayEvent.defMofN,
+  originBlock: Origin(event) }</pre>
+        <p>Где DeductionReward возвращает {{ site.data.magic.deductionPercent }}% от потраченных средств в событии PayEvent&lt;T&gt;, а Origin возвращает блок, который включил event</p>
+        </li>
+        <li>если event ссылается на TimeFixEvent &mdash; проверяем, что num равен нулю, и возвращаем:
+<pre>{ value: <a href="{% post_url 2014-05-29-glossary %}#observerReward">OBSERVER_REWARD</a>,
+  defMofN: event.hashObservationEvent.defMofN,
+  originBlock: Origin(event) }</pre>
+        </li>
+    </ol>
+</div>
+
+<div>
+    <h3><a name="DistributeEvent" class="anchor">DistributeEvent</a></h3>
+    <p>Проверяем, что hashEvent ссылается на событие типа CoinBaseEvent, DistributeEvent, PayEvent&lt;T&gt;, DeductionEvent или TimeFixEvent.</p>
+
+    <center><pre>means = VirtualMean(DistributeEvent.hashEvent, DistributeEvent.num)</pre></center>
+
+    <p>Проверем, что DistributeEvent.useMofN удоволетворяет means.defMofN</p>
+
+    <p>Проверем, что срок годности еще не вышел: отрезок времени от means.originBlock до текущего блока, включая оба конца, занимает не более {{site.data.magic.expiration}} вн. дней</p>
+
+    <p>Проверем, что выход DistributeEvent.hashEvent:DistributeEvent.num не израсходован:</p>
+    <ul>
+        <li>на этот выход не ссылается ни одно событие типа DistributeEvent</li>
+        <li>на этот выход не ссылается ни одно событие типа PayEvent&lt;T&gt;</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="ObservationEvent" class="anchor">ObservationEvent</a></h3>
+
+    Проверяем, что
+    <ul>
+        <li>отрезок времени от ObservationEvent.hashNidabaBlock до текущего блока, включая оба конца занимает не более {{ site.data.magic.agelessDelay }}+1 блоков</li>
+        <li>блок hashBitcoinBlock был добавлен в одном из NidabaHeader, а так же он находится в самой сложной ветке</li>
+        <li>merklePath подтверждает принадлежность BitcoinTransaction к блоку ObservationEvent.hashNidabaBlock</li>
+        <li>событие подписанно тем же ключом, что и один из входов BitcoinTransaction</li>
+        <li>один из выходов транзакции соответствует использованию хеша ObservationEvent.hashNidabaBlock в качестве хеша публичного ключа</li>
+        <li>все добавленные события типа ObservationEvent с hashNidabaBlock равным текущему содержат биткоин транзакции, которые произошли позже текущей BitcoinTransaction</li>
+        <li>самое раннее наблюдение любого блока до hashNidabaBlock произошло раньше BitcoinTransaction</li>
+        <li>самое раннее наблюдение любого блока после hashNidabaBlock произошло позже BitcoinTransaction</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="PayEvent" class="anchor">PayEvent&lt;T&gt;</a></h3>
+
+    <p>Для каждого PayEvent&lt;T&gt;.inputs определим</p>
+    <center><pre>means = VirtualMeans(input.hashEvent, input.num) </pre></center>
+    <p>и проверяем, что</p>
+    <ul>
+        <li>срок годности еще не вышел: отрезок времени от means.originBlock до текущего блока, включая оба конца, занимает не более {{site.data.magic.expiration}} вн. дней</li>
+        <li>input.value >= means.value</li>
+        <li>input.useMofN удоволетворяют means.defMofN</li>
+        <li>для каждого хеша из input.hashInput найдется input в PayEvent&lt;T&gt;.inputs, хеш которого ему равен (при вычислении хеша поле useMofN не учитывается)</li>
+    </ul>
+
+    <p>Через value(PayEvent&lt;T&gt;) обозначим сумму полей value всех input'ов.</p>
+
+    <p>Проверяем, что PayEvent&lt;T&gt;.request.invoice &le; value(PayEvent&lt;T&gt;)</p>
+</div>
+
+<div>
+    <h3><a name="NewCert" class="anchor">NewCert</a></h3>
+
+    Проверяем, что
+    <ul>
+        <li>PayEvent&lt;NewCert&gt; удоволетворяет <a href="#PayEvent">условиям на PayEvent&lt;T&gt;</a></li>
+        <li>событие с таким name еще не было добавлено</li>
+        <li>value(PayEvent&lt;NewCert&gt;) покрывает стоимость владения сертификата с базовой ценой владения на {{site.data.magic.prepayCert}} вн. день/дня/дней</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="NewAcc" class="anchor">NewAcc</a></h3>
+
+    <p>Проверяем, что</p>
+    <ul>
+        <li>PayEvent&lt;NewAcc&gt; удоволетворяет <a href="#PayEvent">условиям на PayEvent&lt;T&gt;</a></li>
+        <li>hashAuction ссылается на PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или AuctionCloseEvent</li>
+    </ul>
+
+    <p>Если hashAuction ссылается на PayEvent&lt;NewCert&gt; &mdash; проверяем, что</p>
+    <ul>
+        <li>аукцион не закончился</li>
+        <li>value(PayEvent&lt;NewAcc&gt;) покрывает стоимость владения сертификата с текущей ценой владения на {{site.data.magic.prepayCert}} вн. день/дня/дней, если аукцион не имеет текущего победителя, то используется базовая цена владения</li>
+    </ul>
+
+    <p>Если hashAuction ссылается на AuctionCloseEvent проверяем, что value(PayEvent&lt;NewAcc&gt;) покрывает стоимость владения сертификата с базовой ценой владения на {{site.data.magic.prepayCert}} вн. день/дня/дней. Текущее событие переоткрывает аукцион.
+    </ul>
+
+    <p>Если hashAuction ссылается на PayEvent&lt;NewAcc&gt; &mdash; проверяем, что</p>
+    <ul>
+        <li>hashAuction.hashAuction ссылается на AuctionCloseEvent</li>
+        <li>переоткрытый аукцион не закончился</li>
+        <li>value(PayEvent&lt;NewAcc&gt;) покрывает стоимость владения сертификата с текущей ценой владения на {{site.data.magic.prepayCert}} вн. день/дня/дней, если аукцион не имеет текущего победителя, то используется базовая цена владения</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="Account" class="anchor">Условия на операции со счетом</a></h3>
+
+    <p>Для работы некоторых операций (Fee, Bid, PubKeyChange, DisavowKey, DisavowCert, OwnershipChange) требуется проверить, что для счета выполняются следующие условия:</p>
+    <ul>
+        <li>если счет принадлежит текущему владельцу сертификата, проверяем, что владелец не пропустил оплаты за сертификат, в противном случае публикуем событие AccCloseEvent для этого счета</li>
+        <li>счет не был отозван (DisavowCert) и не был закрыт (AccCloseEvent)</li>
+        <li>аукцион, в рамках которого был открыт счет, не был отменем (AuctionCloseEvent)</li>
+        <li>если аукцион, в рамках которого был открыт счет, закончился (AuctionEndEvent) проверяется, что счет - победитель</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="Fee" class="anchor">Fee</a></h3>
+
+    <p>Проверяем, что</p>
+    <ul>
+        <li>PayEvent&lt;Fee&gt; удоволетворяет <a href="#PayEvent">условиям на PayEvent&lt;T&gt;</a></li>
+        <li>счет hashAccCreation удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>баланс на счету на момент latestBlock составляет latestBalance</li>
+    </ul>
+</div>
+
+<p>Для следующих операций со счетом требуются особые права. Эти права описываются при создании счета в поле ownership, а так же уточняются впоследствии с помощью событий типа OwnershipChange.</p>
+
+<div>
+    <h3><a name="Bid" class="anchor">Bid</a></h3>
+
+    <p>Если hashPrevBid ссылается на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;, то <code>bid=1</code>, иначе <code>bid=hashPrevBid.coefficient</code></p>
+
+    <p>Проверяем, что</p>
+    <ul>
+        <li>hashPrevBid ссылается на PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или Bid</li>
+        <li>на hashPrevBid не ссылается никакой другой Bid</li>
+        <li>если hashPrevBid &mdash; PayEvent&lt;NewAcc&gt;, то hashPrevBid.hashAuction &mdash; AuctionCloseEvent</li>
+        <li>начало аукциона доступное по цепочке hashAcc, совпадает с началом аукциона, доступного по цепочке hashPrevBid</li>
+        <li>счет hashAcc удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>аукцион не был закрыт (AuctionEndEvent)</li>
+        <li>пользователь предъявил права (поле claim) на ставку со счета hashAcc</li>
+        <li>предыдущий владелец сертификата hashPrevBid.hashAcc не просрочил платеж, в противном случае публикуется соответствующее событие AccCloseEvent</li>
+        <li>если аукцион имеет текущего победителя, то ставка обязана быть больше, чем bid, иначе она (coefficient) должна быть &ge; 1</li>
+        <li>на счету достаточное* кол-во средств</li>
+    </ul>
+
+    <p>Операция Bid списывает средства со счета таким образом, чтобы совокупное число списаных средств за оплату сертификата составляло не меньше, чем та сумма, которая набежала бы если бы пользователь в момент открытия сертификата сделал такую ставку. Если с момента открытия сертификата базовая стоимость не изменялась, то эта сумма эквивалентна произведению базовой стоимости, Bid.coefficient и длинны временного промежутка от начала аукциона до блока включившего Bid включая оба конца. Подробнее можно прочитать TODO:на этой странице.</p>
+</div>
+
+<p>TODO: списание средств на продление, списание на обслуживание счета</p>
+
+<div>
+    <h3><a name="PubKeyChange" class="anchor">PubKeyChange</a></h3>
+    <p>Проверяем, что</p>
+    <ul>
+        <li>PayEvent&lt;PubKeyChange&gt; удоволетворяет <a href="#PayEvent">условиям на PayEvent&lt;T&gt;</a></li>
+        <li>hashLastKeyChange ссылается на PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt;, PayEvent&lt;PubKeyChange&gt; или DisavowKey</li>
+        <li>на hashLastKeyChange не ссылается никакой другой PayEvent&lt;PubKeyChange&gt;</li>
+        <li>на hashLastKeyChange не ссылается DisavowKey</li>
+        <li>счет доступный по цепочке hashLastKeyChange удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>автор события предъявил необходимые права (claim) на операцию со счетом, доступному по цепочке hashLastKeyChange</li>
+        <li>value(PayEvent&lt;PubKeyChange&gt;) покрывает стоимость владения сертификата с базовой ценой владения на {{site.data.magic.changeFee}} вн месяц/месяца/месяцев</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="DisavowKey" class="anchor">DisavowKey</a></h3>
+    <p>Проверяем, что</p>
+    <ul>
+        <li>hashLastKeyChange ссылается на PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или PayEvent&lt;PubKeyChange&gt;</li>
+        <li>на hashLastKeyChange не ссылается никакой другой DisavowKey</li>
+        <li>на hashLastKeyChange не ссылается PayEvent&lt;PubKeyChange&gt;</li>
+        <li>счет доступный по цепочке hashLastKeyChange удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>автор события предъявил необходимые права (claim) на операцию со счетом, доступному по цепочке hashLastKeyChange</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="DisavowCert" class="anchor">DisavowCert</a></h3>
+    <p>Проверяем, что:</p>
+    <ul>
+        <li>hashAuctionStart ссылается на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;</li>
+        <li>на hashAuctionStart не ссылается никакой другой DisavowCert</li>
+        <li>счет hashAuctionStart удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>автор события предъявил необходимые права (claim) на операцию со счетом hashAuctionStart</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="OwnershipChange" class="anchor">OwnershipChange</a></h3>
+    <p>Проверяем, что:</p>
+    <ul>
+        <li>PayEvent&lt;OwnershipChange&gt; удоволетворяет <a href="#PayEvent">условиям на PayEvent&lt;T&gt;</a></li>
+        <li>value(PayEvent&lt;OwnershipChange&gt;) покрывает стоимость владения сертификата с текущей ценой владения на {{site.data.magic.changeFee}} вн. вн месяц/месяца/месяцев</li>
+        <li>hashLastOwnershipChange ссылается на создание счета PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или PayEvent&lt;OwnershipChange&gt;</li>
+        <li>на hashLastOwnershipChange не ссылается никакой другой PayEvent&lt;OwnershipChange&gt;</li>
+        <li>счет доступный по цепочке hashLastOwnershipChange удоволетворяет <a href="#Account">условиям на операции со счетом</a></li>
+        <li>автор события предъявил необходимые права (claim) на операцию со счетом, доступному по цепочке hashLastOwnershipChange</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="AuctionEndEvent" class="anchor">AuctionEndEvent</a></h3>
+
+    <p>Проверяем, что</p>
+    <ul>
+        <li>на hashAuctionStart не ссылается никакой другой AuctionEndEvent</li>
+        <li>hashAuctionStart ссылается на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;</li>
+        <li>если hashAuctionStart ссылается на PayEvent&lt;NewAcc&gt;, то hashAuction.hashAuction ссылается на AuctionCloseEvent</li>
+        <li>от начала аукциона до прошлого блока (включая концы) прошло {{site.data.magic.auctionDuration}} вн. месяца или более</li>
+        <li>если прошло более, то прошлый блок был последним из {{site.data.magic.excellence}} вн. недель спустя последную смену владельца сертификата</li>
+        <li>hashBid ссылается на PayEvent&lt;NewCert&gt;, PayEvent&lt;NewAcc&gt; или Bid</li>
+        <li>начало аукциона доступное по цепочке hashBid совпадает с hashAuctionStart</li>
+        <li>на hashBid не ссылается Bid</li>
+        <li>счет (hashBid.hashAcc в случае Bid или hashBid иначе) не был закрыт или отозван</li>
+        <li>владелец счета (hashBid.hashAcc в случае Bid или hashBid иначе) не просрочил платеж</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="AuctionCancelEvent" class="anchor">AuctionCancelEvent</a></h3>
+
+    <p>Проверяем, что</p>
+    <ul>
+        <li>на hashAuctionStart не ссылается никакой другой AuctionCancelEvent</li>
+        <li>hashAuctionStart ссылается на PayEvent&lt;NewCert&gt; или PayEvent&lt;NewAcc&gt;</li>
+        <li>если hashAuctionStart ссылается на PayEvent&lt;NewAcc&gt;, то hashAuction.hashAuction ссылается на AuctionCloseEvent</li>
+        <li>от начала аукциона до прошлого блока (включая концы) прошло {{site.data.magic.auctionDuration}} вн. месяца или более</li>
+        <li>если прошло более, то прошлый блок был последним из {{site.data.magic.excellence}} вн. недель спустя утрату владельца (утрата владельца должна быть зафиксировна с помощью AccCloseEvent, но не обязательно в следующем блоке после непосредственной утраты)</li>
+        <li>на конец прошлого блока сертификат не имел владельца</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="AccCloseEvent" class="anchor">AccCloseEvent</a></h3>
+    <p>hashAccStart ссылается на счет, который принадлижал владельцу сертификата, который просрочил платеж; счет был открыт в рамках аукциона, который еще не закончился и не был отменен. На hashAccStart не ссылается никакой другой AccCloseEvent.</p>
+</div>
+
+<div>
+    <h3><a name="DeductionEvent" class="anchor">DeductionEvent</a></h3>
+    <p>После каждых {{ site.data.magic.contestBatch }} событий типа PayEvent&lt;T&gt; должно идти событие типа DeductionEvent. DeductionEvent должно содержаться в том же блоке, что и последнее событие из {{ site.data.magic.contestBatch }}. Блок может содержать несколько DeductionEvent.</p>
+
+    <p>При валидации DeductionEvent проверяем, что список topWorkPayments определен следующем образом:</p>
+    <ul>
+        <li>рассматриваются только те платежы из {{ site.data.magic.contestBatch }}, которые продемонстрировали дополтительную работу</li>
+        <li>оценивается производительность автора платежа TODO: how?</li>
+        <li>платежи группируются по производительности автора</li>
+        <li>выходной набор состоит как минимум из всех платежей самой мощной группы</li>
+        <li>в выходной набор добавляются элементы из следующей по мощности группы, только если после добавления всех платежей из группы, кол-во элементов в выходном наборе не превысет {{site.data.magic.winnerPercent}}% от размера конкурса ({{ site.data.magic.contestBatch }}).</li>
+    </ul>
+</div>
+
+<div>
+    <h3><a name="BasePriceChangingProcess" class="anchor">Изменение базовой цены</a></h3>
+    <p>Каждый блок происходит оценка средней производительности, для этого расматриваются платежи (события типа PayEvent&lt;T&gt;) за {{site.data.magic.newPriceHistory}} последний(-ие) вн. месяц(-а,-ов), оценивается производительность автора каждого платежа и все оценки усредняются. На основании этой информации пересчитывается базовая цена (newBasePrice).</p>
+
+    <p>Если анонса изменения базовой цены еще не было и новая базовая цена меньше в {{ site.data.magic.newPriceThresholdX }} или более число раз по сравнению с текущей, то новая цена незамедлительно вступает в силу:</p>
+
+    <pre>PriceAnnouncementEvent({ 
+  newBasePrice: newBasePrice,
+  delay: 0,
+})</pre>
+
+    <p>В этом случае новая базовая цена начинает действовать со следующего после включившего её блока.</p>
+
+    <p>Если анонса изменения базовой цены еще не было, но её новое значение отличается от текущего более чем в {{ site.data.magic.newPriceThresholdX }} раз(-а), то публикуется анонс об изменении через {{site.data.magic.newPriceDelay}} вн. недели.</p>
+
+    <pre>PriceAnnouncementEvent({ 
+  newBasePrice: newBasePrice,
+  delay: {{ site.data.magic.daysInTwoWeeks }},
+})</pre>
+
+    <p>Если обозначить за нулевой блок включивший PriceAnnouncementEvent, то новая цена вступит в силу начиная с блока {{ site.data.magic.daysInTwoWeeks }}+1</p>
+
+    <p>Если анонс уже был и еще не вступил в силу, а пересчитанная базовая цена на текущий момент выше, чем анонсируемая, то ничего не происходит.</p>
+
+    <p>Если анонс уже был и еще не вступил в силу, а пересчитанная базовая цена на текущий момент ниже, чем анонсируемая, то выпускается новый анонс на ту же дату, который перезатерает предыдущий, только с новой пересчитанной базовой ценой.</p>
+
+    <p>Пусть прошло два блока с момента анонса и сейчас валидируется/конструируется третий, тогда анонс будет иметь следующий вид:</p>
+
+    <pre>PriceAnnouncementEvent({ 
+  newBasePrice: newBasePrice,
+  delay: {{ site.data.magic.daysInTwoWeeks }}-3,
+})</pre>
+</div>
+
+<div>
+    <h3><a name="PriceAnnouncementEvent" class="anchor">PriceAnnouncementEvent</a></h3>
+    Если при валидации блок содержит событие типа PriceAnnouncementEvent, то проверяется, действительно ли он должен быть там используя правила <a href="#BasePriceChangingProcess">изменения базовой цены</a>
+</div>
+
+<div>
+    <h3><a name="TimeFixEvent" class="anchor">TimeFixEvent</a></h3>
+    <p>Каждый блок кроме первых {{ site.data.magic.agelessDelay }}+1 обязан содержать TimeFixEvent</p>
+    <p>Проверяем, что</p>
+    <ul>
+        <li>длинна отрезка от hashObservationEvent.hashNidabaBlock до текущего блока, включая оба конца состовляет {{ site.data.magic.agelessDelay }}+2 блоков</li>
+        <li>hashObservationEvent является самым ранним наблюдением блока hashObservationEvent.hashNidabaBlock</li>
+    </ul>
+</div>
+
+</div>

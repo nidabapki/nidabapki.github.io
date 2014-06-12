@@ -1,0 +1,43 @@
+#specPage .structure-spec {
+    margin-bottom: 1em;
+    margin-top: 1em;
+}
+
+#specPage .structure-spec .description {
+    margin-bottom: 0.8em;
+}
+
+#specPage .structure-spec td {
+    vertical-align: top;
+}
+
+#specPage .structure-spec pre {
+    width: 16em;
+    font-family: monospace;
+}
+
+#specPage .field {
+    text-decoration: underline;
+    cursor: pointer;
+    color: rgb(255, 0, 0);
+}
+
+#specPage .top {
+    background-color: rgb(255, 229, 229);
+}
+
+#specPage .selected {
+    background-color: rgb(255, 229, 229);
+}
+
+#specPage #tableOfContents {
+    float: left;
+    list-style-type: none;
+    margin-left: -1em;
+}
+
+#specPage #tableOfContents ul {
+    list-style-type: none;
+    margin-left: 1em;
+    padding-left: 0;
+}

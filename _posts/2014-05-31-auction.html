@@ -1,0 +1,89 @@
+---
+layout: protocol
+title: Auction
+name: Auction
+tags: ["auction", "menu"]
+---
+
+<div id="auctionPage">
+
+<p>Рассмотрим пример аукциона за какое-нибудь имя. Пусть <a href="{% post_url 2014-05-29-glossary %}#BasePrice">базовая стоимость</a> равна 1, а <a href="{% post_url 2014-05-29-glossary %}#InterestRate">процентная ставка</a> не отличается от стандартной.</p>
+
+<p>Введем нумерацию блоков обозначив за первый тот, в котором создан аукцион. Ниже в левом верхнем углу указываются номера блоков, жирным выделены <span id="event">события</span>, относящиеся к аукциону, справа от них <span id="comment">приведены комментарии</span>, а под ними находится <span id="state">состояние счетов</span> сразу после этого блока: первая компонента &mdash; кол-во средств на счету, вторая компонента &mdash; кол-во списанных средств за владение сертификатом.</p>
+
+{% for block in site.data.auction %}
+<div class="block">
+    {% assign splitter="splitter-off" %}
+    {% if (block.steps != empty) and (block.states != empty) %}
+        {% assign splitter="splitter-on" %}
+    {% endif %}
+
+    <table class="blockInfo">
+        <tr>
+            <td class="blockNumber"><div>{{ block.num }}</div></td>
+            <td></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                {% if block.steps != empty %}
+                <table class="blockBody {{ splitter }}">
+                    {% for step in block.steps %}
+                        <tr>
+                            <td class="action">{{ step.action }}</td>
+                            <td>//</td>
+                            <td class="comment">{{ step.comment }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>
+                <div>
+                    {% for state in block.states %}
+                        <pre>{{ state }}</pre>
+                    {% endfor %}
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+{% if block.num == 1 %}
+<div>
+    <p>Каждый блок (включая тот, в котором пользователь стал владельцем домена) со счета владельца домена списывается цена владения. После того, как средства списаны счет владельца домена обрабатывается точно так же, как и любой другой счет &mdash; со счета списывается часть средств "за обслуживание счета".</p>
+    <center><pre>(72-1) · 0.99998 = 70.99858</pre></center>
+    <p>Для удобства, в примере все вычисления округляются вниз до 6 знаков после запятой.</p>
+</div>
+{% endif %}
+
+{% if block.num == 352 %}
+<div>
+    <p>(62-1+1)*1*1 + (352-63+1)*2*1=642</p>
+</div>
+{% endif %}
+
+{% if block.num == 353 %}
+<div>
+    <p>TODO: догонка списанных средств</p>
+    <p>(62-1+1)*1*3 + (353-63+1)*2*3=1932</p>
+</div>
+{% endif %}
+
+{% if block.num == 404 %}
+<div>
+    <p>(62-1+1)*1*1 + (404-63+1)*2*1=746</p>
+</div>
+{% endif %}
+{% endfor %}
+
+<p>Ниже описаны связи (ссылки) между событиями.</p>
+
+<div>
+    <img src="{{ site.url }}/files/auction.png" />
+</div>
+
+</div>
