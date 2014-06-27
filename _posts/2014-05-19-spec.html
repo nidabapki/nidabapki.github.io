@@ -507,7 +507,14 @@ TODO: Пример с MerklePath
   <span class="field">hashPrevBid</span>,
   <span class="field">hashAcc</span>,
   <span class="field">coefficient</span>,
-  <span class="field">claim</span>
+  <span class="field">claim</span> : {
+    m,
+    sig({
+      hash(this / claim),
+      k,
+      hash(pubKey){k}
+    }, pubKey){m}
+  }
 }</pre>
   </td>
   <td>
@@ -522,7 +529,7 @@ TODO: Пример с MerklePath
         coefficient &mdash; ставка в виде коеффициента от базовой стоимости
       </div>
       <div id="bid_claim" class="description">
-        claim &mdash; предъявление прав на операцию Bid
+        claim &mdash; предъявление прав на операцию Bid, представляет из себя список подписей, так же, как и в случае с useMofN, каждая подпись может требовать наличие других подписей в этом списке
       </div>
     </div>
   </td>
