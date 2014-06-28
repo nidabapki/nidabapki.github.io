@@ -1,0 +1,27 @@
+body {
+    font-size: 18px;
+    font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+#column {
+    margin: 0 auto 0 auto;
+    max-width: 50em;
+    font-size: 110%;
+}
+
+#footer {
+    margin-top: 2em;
+    border-top: 4px solid #eee;
+    font-size: 80%;
+    padding-bottom: 2em;
+}
+
+#contacts {
+    margin-top: 2em;
+}
+
+#contacts a {
+    background: yellow;
+    color: black;
+    text-decoration: none;
+}

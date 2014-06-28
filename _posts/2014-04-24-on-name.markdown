@@ -1,0 +1,22 @@
+---
+layout: post
+title:
+  short: On name
+  full: "Why do I choose Nidaba to be the name?"
+author:
+  name: Denis Rystsov
+  link: "http://rystsov.info/"
+tags: ["post"]
+---
+
+<!--begin-preview-->
+
+Nidaba is the Sumerian goddess of writing and harvest. It turns out that her name is the perfect name for a distributed pki based on blockchain technologies.
+
+There is a classic analogy between gold and Bitcoin. We can imagine the active nodes of the Bitcoin network as the miners which mine the same gold-field. The field was rich at the beginning of mining but it becomes unproductive with time. As you see there is a limited amount of <s>gold</s> bitcoins.
+
+<!--end-preview-->
+
+With Nidaba there is another analogy. The internal currency is a crop and the active nodes are farmers. The internal currency may rot just like a crop. Also the supply of the crop/internal currency can be raised at any time if more people become farmers/active nodes, but this would drop the price for the crop/currency on the market and the inefficiency farmers/active nodes give up farming/supporting the network.
+
+As I mention before, Nidaba is the Sumerian goddess of writing and harvest. Both this activities match the ideas behind the system. Blockchain keeps all the system's history and [the history](http://en.wikipedia.org/wiki/Recorded_history) itself begins with the invention of writing. The link between the distributed PKI and a harvest I highlighted in the previous paragraph.

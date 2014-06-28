@@ -1,0 +1,24 @@
+---
+layout: post
+title: 
+  short: "Nidaba vs Namecoin"
+  full: "Nidaba vs. Namecoin"
+author:
+  name: Denis Rystsov
+  link: "http://rystsov.info/"
+tags: ["post"]
+---
+
+<!--begin-preview-->
+
+Since a domain is a part of brand equity then different domains have different value. But just like the traditional DNS, Namecoin uses the model where the price per domain is fixed and the first bid wins. This arbitrage leads to the cybersquatting. As the cybersquatting is a form of monopoly then it harms the economy. Nidaba uses the penny auction to set a price for a domain according to the domain's value.
+
+Namecoin is a deflationary cryptocurrency based on the extended Bitcoin protocol. Just like Bitcoin it may suffer from <a href="https://en.bitcoin.it/wiki/Tragedy_of_the_Commons">the tragedy of the commons</a>. Nidaba was designed from scratch to have a stable economy and to avoid the tragedy of the commons.
+
+<!--end-preview-->
+
+Price per domain in Namecoin is scheduled to decrease from a value set in beginning of the network. It makes the situation with cybersquatting worse and it leads to the problem of the vandalism (littering the blockchain). Minimal Nidaba's domain registration price is bound to an average miner's hash rate, if the rate goes up the price follows, so it protects Nidaba from the littering of the network.
+
+It is hard to predict the price of Namecoin's intrinsic currency on the external market, hence it is hard to predict the price per domain registration. Nidaba uses <a href="http://en.wikipedia.org/wiki/Supply_and_demand">the supply and demand model</a> to control price fluctuation of the Nidaba's intrinsic currency on the external market.
+
+Namecoin forces miners to store the whole blockchain, with Nidaba a miner can pick only a part of all data.

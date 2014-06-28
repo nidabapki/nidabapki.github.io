@@ -1,39 +1,36 @@
 ---
 layout: default
-title: Nidaba
+title:
+  short: Home
+  full:
 ---
 
-<div class="headline">
-    <form action="http://nidaba-pki.us8.list-manage.com/subscribe/post?u=40b09bf13ed11f907ea765737&amp;id=5f743a19d9" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
-        join the <a href="https://groups.google.com/forum/#!forum/nidabapki">community</a> or
-        <input type="email" style="width: 20em;" placeholder="leave your email to receive news" value="" name="EMAIL" class="required email" id="mce-EMAIL">
-        <div style="position: absolute; left: -5000px;">
-            <input type="text" name="b_40b09bf13ed11f907ea765737_5f743a19d9" tabindex="-1" value="">
-        </div>
-        <input type="submit" value="Subscribe" name="subscribe" id="mc-embedded-subscribe" class="button">
-    </form>
+<div id="menu">
+    <span class="current">{{ page.title.short }}</span>
+    <a href="{% post_url 2014-06-27-blog %}">Blog</a>
 </div>
 
-<h1>Nidaba</h1>
+<div id="index">
+
+<h1><span>Nidaba</span></h1>
 
 <p>Nidaba is a distributed scalable naming system that can be used as a DNS, an an authentication system or as a certificate authority. Nidaba is based on the Bitcoin protocol and similar to Namecoin, but has some distinguished properties. You can find the details in <a href="{{ site.url }}/files/nidaba.pdf">the whitepaper</a>.</p>
 
-<p><a href="http://rystsov.info/2014/04/24/nidaba.html">Why I chose Nidaba to be the name</a></p>
+<p><a href="{% post_url 2014-04-24-on-name %}">Why do I chose Nidaba to be the name?</a></p>
 
-<h2>Nidaba vs. traditional DNS and certificate authority</h2>
+<div>
+    <div class="NB">N.B.</div>
+    <blockquote>
+        After the whitepaper was timestamped I made some minor changes to the core ideas of Nidaba: 
+        added<sup><a href="{% post_url 2014-06-12-pow-meets-pos %}">[1]</a></sup> proof of stake to resists to 51%-attack and got rid<sup><a href="{% post_url 2014-06-23-auction %}">[2]</a></sup> of penny auction.
+    </blockquote>
+</div>
 
-<p>With Nidaba your domain belongs to you. No one can fake your identity to seizure the domain and it also can't be seizured by a goverment because there isn't an authority behind the system.</p>
+
+<h2><span>Nidaba vs. certificate authority</span></h2>
 
 <p>Current web is based on <a href="http://en.wikipedia.org/wiki/Certificate_authority#CA_compromise">trust to the certificates authorities</a>. If any is compromised then a malefactor can steal one's identity and organise a <a href="http://en.wikipedia.org/wiki/Man-in-the-middle_attack">man-in-the-middle attact</a>. Of cause a CA can compromise itself by a request of the government agencies. Nidaba is based on idea that you trust no one.</p>
 
-<h2>Nidaba vs. Namecoin</h2>
+<p>Please also read <a href="{% post_url 2014-05-13-namecoin %}">comparison</a> with Namecoin.</p>
 
-<p>Since a domain is a part of brand equity then different domains have different value. But just like the traditional DNS, Namecoin uses the model where the price per domain is fixed and the first bid wins. This arbitrage leads to the cybersquatting. As the cybersquatting is a form of monopoly then it harms the economy. Nidaba uses the penny auction to set a price for a domain according to the domain's value.</p>
-
-<p>Namecoin is a deflationary cryptocurrency based on the extended Bitcoin protocol. Just like Bitcoin it may suffer from <a href="https://en.bitcoin.it/wiki/Tragedy_of_the_Commons">the tragedy of the commons</a>. Nidaba was designed from scratch to have a stable economy and to avoid the tragedy of the commons.</p>
-
-<p>Price per domain in Namecoin is scheduled to decrease from a value set in beginning of the network. It makes the situation with cybersquatting worse and it leads to the problem of the vandalism (littering the blockchain). Minimal Nidaba's domain registration price is bound to an average miner's hash rate, if the rate goes up the price follows, so it protects Nidaba from the littering of the network.</p>
-
-<p>It is hard to predict the price of Namecoin's intrinsic currency on the external market, hence it is hard to predict the price per domain registration. Nidaba uses <a href="http://en.wikipedia.org/wiki/Supply_and_demand">the supply and demand model</a> to control price fluctuation of the Nidaba's intrinsic currency on the external market.</p>
-
-<p>Namecoin forces miners to store the whole blockchain, with Nidaba a miner can pick only a part of all data.</p>
+</div>

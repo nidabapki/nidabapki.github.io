@@ -1,0 +1,17 @@
+---
+layout: default
+---
+
+<div id="menu">
+    <a href="{{ site.url }}/">Home</a>
+    <a href="{% post_url 2014-06-27-blog %}">Blog</a>
+    <span class="current">{{ page.title.short }}</span>
+</div>
+
+<div id="post">
+
+<h1><span>{{ page.title.full }}</span></h1>
+
+{{ content }}
+
+<div>

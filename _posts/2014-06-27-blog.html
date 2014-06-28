@@ -1,0 +1,33 @@
+---
+layout: blog
+title:
+  short: Blog
+  full: Blog
+---
+
+<div id="menu">
+    <a href="{{ site.url }}/">Home</a>
+    <span class="current">{{ page.title.short }}</span>
+</div>
+
+<div id="blog">
+
+<div>
+    {% for post in site.tags.post %}
+    <div class="post_preview">
+        <h1><a href="{{ post.url }}">{{ post.title.full }}</a></h1>
+        <div class="meta">
+            <span class="label">Posted by</span>
+            <span class="author"><a href="{{ post.author.link }}">{{ post.author.name }}</a></span>
+            <span class="label">on</span>
+            <span class="date">{{ post.date | | date: "%Y-%m-%d" }}</span>
+        </div>
+        <div class="content">
+            {{ post.content | split: "<!--begin-preview-->" | last | split: "<!--end-preview-->" | first }}
+        </div>
+        <a href="{{ post.url }}">Continue reading&hellip;</a>
+    </div>
+    {% endfor %}
+</div>
+
+</div>
